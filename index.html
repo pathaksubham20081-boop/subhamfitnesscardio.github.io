@@ -3,260 +3,210 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grind Tracker Elite</title>
-
+<title>Grind Challenge System</title>
 <style>
-body{
-margin:0;
-font-family:Arial, sans-serif;
-background:#000;
-color:white;
-}
-
-header{
-background:linear-gradient(90deg,#ff0000,#ff6600);
-padding:25px;
-text-align:center;
-font-size:32px;
-font-weight:bold;
-}
-
-.home{
-text-align:center;
-padding:40px 20px;
-}
-
-input, select, textarea{
-padding:10px;
-margin:10px 0;
-border-radius:6px;
-border:none;
-width:90%;
-max-width:400px;
-}
-
-button{
-padding:10px 20px;
-background:#ff6600;
-color:white;
-border:none;
-border-radius:6px;
-font-weight:bold;
-cursor:pointer;
-}
-
-button:hover{
-background:#ff0000;
-}
-
-.container{
-max-width:700px;
-margin:30px auto;
-background:#111;
-padding:25px;
-border-radius:12px;
-box-shadow:0 0 30px rgba(255,0,0,0.7);
-display:none;
-}
-
-.task{
-display:flex;
-justify-content:space-between;
-align-items:center;
-background:#1a1a1a;
-padding:12px;
-margin:10px 0;
-border-left:5px solid #ff0000;
-border-radius:6px;
-}
-
-.progress-bar{
-height:20px;
-background:#333;
-border-radius:10px;
-margin-top:20px;
-overflow:hidden;
-}
-
-.progress{
-height:100%;
-width:0%;
-background:linear-gradient(90deg,#ff0000,#ff6600);
-transition:0.3s;
-}
-
-textarea{
-height:100px;
-resize:none;
-}
-
-#streak{
-margin-top:10px;
-color:#ff6600;
-font-weight:bold;
-}
+body{margin:0;font-family:Arial;background:#000;color:#fff}
+nav{display:flex;justify-content:center;gap:15px;background:#111;padding:15px}
+nav button{background:#ff6600;border:none;color:#fff;padding:8px 15px;border-radius:5px;cursor:pointer}
+nav button:hover{background:#ff0000}
+section{display:none;padding:20px;max-width:900px;margin:auto}
+.active{display:block}
+input,select,textarea{width:100%;padding:8px;margin:8px 0;border-radius:5px;border:none}
+.task{display:flex;justify-content:space-between;background:#1a1a1a;padding:10px;margin:6px 0;border-left:4px solid #ff0000}
+.progress-bar{height:20px;background:#333;border-radius:10px;margin-top:10px;overflow:hidden}
+.progress{height:100%;width:0;background:linear-gradient(90deg,#ff0000,#ff6600)}
+button.main{background:#ff6600;margin-top:10px}
+.card{background:#111;padding:15px;border-radius:8px;margin:10px 0}
 </style>
 </head>
-
 <body>
 
-<header>🔥 GRIND TRACKER ELITE 🔥</header>
+<nav>
+<button onclick="show('home')">Home</button>
+<button onclick="show('tracker')">Tracker</button>
+<button onclick="show('stats')">Stats</button>
+<button onclick="show('achievements')">Achievements</button>
+<button onclick="show('report')">Report</button>
+</nav>
 
-<div class="home" id="home">
-<h2>Enter Your Name</h2>
-<input type="text" id="username" placeholder="Your Name">
+<section id="home" class="active">
+<h2>Start Challenge</h2>
+<input id="nameInput" placeholder="Enter your name">
+<button class="main" onclick="start()">Start / Continue</button>
+</section>
 
-<h3>Select Day</h3>
-<select id="daySelect"></select>
-
-<br>
-<button onclick="startTracker()">Start</button>
-</div>
-
-<div class="container" id="tracker">
-
+<section id="tracker">
 <h2 id="welcome"></h2>
-
-<div class="task">
-<label>🏋 Gym Completed</label>
-<input type="checkbox" class="check">
-</div>
-
-<div class="task">
-<label>💧 3 Litres Water</label>
-<input type="checkbox" class="check">
-</div>
-
-<div class="task">
-<label>📚 5 Hours Study</label>
-<input type="checkbox" class="check">
-</div>
-
-<div class="task">
-<label>🧠 Self Control Maintained</label>
-<input type="checkbox" class="check">
-</div>
-
-<div class="task">
-<label>🔥 Grind Day Complete</label>
-<input type="checkbox" class="check">
-</div>
-
-<div class="progress-bar">
-<div class="progress" id="progress"></div>
-</div>
-
-<p id="percent">0% Complete</p>
-<p id="streak"></p>
-
-<h3>About Today's Day</h3>
+<select id="daySelect"></select>
+<div id="tasks"></div>
+<div class="progress-bar"><div class="progress" id="progress"></div></div>
+<p id="percentText"></p>
 <textarea id="journal" placeholder="Write about today..."></textarea>
+<button class="main" onclick="saveDay()">Save Day</button>
+</section>
 
-<br>
-<button onclick="resetDay()">Reset Day</button>
+<section id="stats">
+<h2>Stats</h2>
+<div id="statsData"></div>
+</section>
 
-</div>
+<section id="achievements">
+<h2>Achievements</h2>
+<div id="achData"></div>
+</section>
+
+<section id="report">
+<h2>Final Report Card</h2>
+<div id="reportData"></div>
+</section>
 
 <script>
-const daySelect=document.getElementById("daySelect");
-for(let i=1;i<=25;i++){
-let option=document.createElement("option");
-option.value="Day"+i;
-option.text="Day "+i;
-daySelect.appendChild(option);
-}
-
-const checks=document.querySelectorAll(".check");
-const progress=document.getElementById("progress");
-const percentText=document.getElementById("percent");
-const journal=document.getElementById("journal");
-const streakText=document.getElementById("streak");
-
 let currentUser="";
-let currentDay="";
+let currentDay=1;
 
-function startTracker(){
-currentUser=document.getElementById("username").value.trim();
-currentDay=daySelect.value;
+const taskList=[
+"Gym Completed",
+"3L Water",
+"5h Study",
+"Self Control",
+"Grind Complete",
+"No Junk Food",
+"No Reels / Social Detox"
+];
 
-if(currentUser===""){
-alert("Enter Name");
-return;
+for(let i=1;i<=25;i++){
+let opt=document.createElement("option");
+opt.value=i;
+opt.text="Day "+i;
+daySelect.appendChild(opt);
 }
 
-document.getElementById("home").style.display="none";
-document.getElementById("tracker").style.display="block";
-document.getElementById("welcome").innerText=
-"Welcome "+currentUser+" | "+currentDay;
-
-loadData();
+function show(id){
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+if(id==="stats") loadStats();
+if(id==="achievements") loadAchievements();
+if(id==="report") loadReport();
 }
 
-function getKey(index){
-return currentUser+"-"+currentDay+"-task"+index;
+function start(){
+let name=nameInput.value.trim();
+if(!name){alert("Enter name");return;}
+currentUser=name;
+localStorage.setItem("activeUser",name);
+welcome.innerText="Welcome "+name;
+renderTasks();
+show("tracker");
 }
 
-function loadData(){
-let checked=0;
-
-checks.forEach((c,i)=>{
-if(localStorage.getItem(getKey(i))==="true"){
-c.checked=true;
-checked++;
-}else{
-c.checked=false;
-}
+function renderTasks(){
+tasks.innerHTML="";
+taskList.forEach((t,i)=>{
+let div=document.createElement("div");
+div.className="task";
+div.innerHTML=`<label>${t}</label><input type="checkbox" onchange="updateProgress()">`;
+tasks.appendChild(div);
 });
+loadDay();
+}
 
-journal.value=localStorage.getItem(currentUser+"-"+currentDay+"-journal")||"";
+function getData(){
+return JSON.parse(localStorage.getItem(currentUser)||"{}");
+}
 
+function saveData(data){
+localStorage.setItem(currentUser,JSON.stringify(data));
+}
+
+function loadDay(){
+let data=getData();
+let dayData=data["day"+daySelect.value];
+let checkboxes=document.querySelectorAll("#tasks input");
+checkboxes.forEach((c,i)=>{
+c.checked=dayData?dayData.tasks[i]:false;
+});
+journal.value=dayData?dayData.journal:"";
 updateProgress();
 }
+
+daySelect.onchange=loadDay;
 
 function updateProgress(){
-let checked=0;
-checks.forEach((c,i)=>{
-if(c.checked){
-checked++;
-localStorage.setItem(getKey(i),true);
-}else{
-localStorage.setItem(getKey(i),false);
-}
-});
-
-let percent=(checked/checks.length)*100;
+let checks=document.querySelectorAll("#tasks input");
+let done=[...checks].filter(c=>c.checked).length;
+let percent=Math.round((done/taskList.length)*100);
 progress.style.width=percent+"%";
-percentText.innerText=percent+"% Complete";
-
-if(percent===100){
-let streak=parseInt(localStorage.getItem(currentUser+"-streak")||0);
-streak++;
-localStorage.setItem(currentUser+"-streak",streak);
-streakText.innerText="🔥 Current Streak: "+streak+" Days";
-}else{
-streakText.innerText="🔥 Current Streak: "+
-(localStorage.getItem(currentUser+"-streak")||0)+" Days";
-}
+percentText.innerText=percent+"% Completed";
 }
 
-checks.forEach(c=>{
-c.addEventListener("change",updateProgress);
-});
+function saveDay(){
+let data=getData();
+let checks=document.querySelectorAll("#tasks input");
+let tasksArr=[...checks].map(c=>c.checked);
+let percent=Math.round((tasksArr.filter(x=>x).length/taskList.length)*100);
 
-journal.addEventListener("input",()=>{
-localStorage.setItem(currentUser+"-"+currentDay+"-journal",journal.value);
-});
+data["day"+daySelect.value]={
+tasks:tasksArr,
+journal:journal.value,
+percent:percent
+};
 
-function resetDay(){
-checks.forEach((c,i)=>{
-c.checked=false;
-localStorage.setItem(getKey(i),false);
-});
-journal.value="";
-localStorage.setItem(currentUser+"-"+currentDay+"-journal","");
-updateProgress();
+saveData(data);
+alert("Day Saved!");
+}
+
+function loadStats(){
+let data=getData();
+let total=0,count=0;
+for(let i=1;i<=25;i++){
+if(data["day"+i]){
+total+=data["day"+i].percent;
+count++;
+}
+}
+let avg=count?Math.round(total/count):0;
+statsData.innerHTML=`
+<div class="card">Days Saved: ${count}</div>
+<div class="card">Average Performance: ${avg}%</div>
+`;
+}
+
+function loadAchievements(){
+let data=getData();
+let count=Object.keys(data).length;
+let badges="";
+if(count>=3) badges+="<div class='card'>🔥 3 Day Starter</div>";
+if(count>=7) badges+="<div class='card'>💪 7 Day Discipline</div>";
+if(count>=15) badges+="<div class='card'>⚡ 15 Day Beast</div>";
+if(count>=25) badges+="<div class='card'>🏆 25 Day Legend</div>";
+achData.innerHTML=badges||"<div class='card'>No achievements yet</div>";
+}
+
+function loadReport(){
+let data=getData();
+let total=0,count=0,best=0,worst=100;
+for(let i=1;i<=25;i++){
+if(data["day"+i]){
+let p=data["day"+i].percent;
+total+=p;count++;
+if(p>best) best=p;
+if(p<worst) worst=p;
+}
+}
+let avg=count?Math.round(total/count):0;
+let title="Needs Discipline";
+if(avg>=50) title="Focused";
+if(avg>=75) title="Locked In";
+if(avg>=90) title="Legend";
+
+reportData.innerHTML=`
+<div class="card">Days Completed: ${count}</div>
+<div class="card">Average: ${avg}%</div>
+<div class="card">Best Day: ${best}%</div>
+<div class="card">Worst Day: ${worst}%</div>
+<div class="card">Final Rank: ${title}</div>
+`;
 }
 </script>
-
 </body>
 </html>
